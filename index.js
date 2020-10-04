@@ -80,27 +80,27 @@ let absoultePath = require('path').dirname(require.main.filename)+"\\docs";
 
 let serverBooting = async () => {
     // Mongodb Connect
-    await mongoose.connect("mongodb://localhost/febrezewords");
+    await mongoose.connect("mongodb://13.125.19.118/febrezewords");
 
     //#region Render sites
     app.get("", (req, res) => {
-        res.sendFile(absoultePath + "\\home.html");
+        res.sendFile(absoultePath + "/home.html");
     });
 
     app.get("/main.html", (req, res) => {
-        res.sendFile(absoultePath + "\\main.html");
+        res.sendFile(absoultePath + "/main.html");
     });
 
     app.get("/home.html", (req, res) => {
-        res.sendFile(absoultePath + "\\home.html");
+        res.sendFile(absoultePath + "/home.html");
     });
 
     app.get("/workbook.html", (req, res) => {
-        res.sendFile(absoultePath + "\\workbook.html");
+        res.sendFile(absoultePath + "/workbook.html");
     });
     
     app.get("/dictionary.html", (req, res) => {
-        res.sendFile(absoultePath + "\\dictionary.html");
+        res.sendFile(absoultePath + "/dictionary.html");
     });
     //#endregion
 
