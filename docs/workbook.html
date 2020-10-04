@@ -1,0 +1,656 @@
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta name="mobile-web-app-capable" content="yes">
+
+        <title>
+            Fabreze Words
+        </title>
+        <style>
+            body{
+                margin:0;
+            }
+
+            .header{
+                position :fixed;
+                background-position-y: 0;
+
+                top : 0;
+
+                width:100%;
+                height:48px;
+
+                background-color: #33415C;
+                color : white;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+
+                box-shadow: 0px 0px 5px #33415C;
+            }
+
+            .page{
+                position: absolute;
+
+                width:100%;
+                height:100%;
+            }
+
+            .title{
+                position: relative;
+
+                top : 0px;
+                
+                color : darkslategray;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 800;
+                font-size: 4vh;
+
+                text-align: center;
+            }
+
+            .subtitle{
+                position: relative;
+
+                margin-top: 10px;
+                
+                color : darkslategray;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+
+                text-align: center;
+            }
+
+            .dictionary{
+                overflow :hidden;
+
+                position: relative;
+                width:100%;
+                top:72px;
+                overflow:scroll;
+            }
+
+            .dictionary .button{
+                position: relative;
+
+                width:80%;
+                left:10%;
+
+                height:100px;
+                top:20px;
+                margin-bottom:30px;
+                
+                text-align: center;
+
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 800;
+                font-size: 2vh;
+                border-radius: 5px;
+
+                box-shadow: 0px 0px 5px gray;
+
+                transition: all 0.2s;
+            }
+
+            .check{
+                background-color:gray;
+                color : white;
+            }
+
+            .uncheck{
+                background-color:white;
+                color : darkslategray;
+            }
+
+            .next-button{
+                position: absolute;
+                width:200px;
+                height:60px;
+                bottom:14px;
+
+                background-color: white;
+                border-radius: 5px;
+                box-shadow: 0px 0px 5px gray;
+
+                color : darkslategray;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2.5vh;
+            }
+
+            .left_100{
+                animation-duration: 0.3s;
+                animation-name:l100;
+                animation-fill-mode:forwards;
+            }
+
+            .background-darkcyan{
+                background-color: #0096C7;
+            }
+
+            .background-cyan{
+                background-color: #00B4D4;
+            }
+            .background-light-cyan{
+                background-color: #48CAE4;
+            }
+
+            .dict-th{
+                
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 800;
+                font-size: 2vh;
+            }
+            .dict-td{
+                
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+            }
+            input.progressName {
+                position: absolute;
+                bottom:100px ;
+                width:60%;
+                left:20%;
+                border:0;
+                height:40px;
+                
+                border-bottom:4 solid darkslategray;
+            }
+
+            @keyframes l100{
+                from {
+                    left : 0%;
+                }
+
+                to {
+                    left : -100%;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="page background-darkcyan">
+            <div class="dictionary" style="left:10%; width:80%;">
+                <div class = "title" style="color:white">
+                    학습장이 완성되었습니다!
+                </div>
+
+                <div class="hcenter dict-td" style="color:white; position: relative; bottom:160px;">
+                    학습장의 이름을 변경하시겠습니까?
+                </div>
+                <br>
+                <input id="progressName" class="progressName" placeholder="학습장 이름" value="새 학습장">
+
+            </div>
+            <div class = "next-button hcenter" style="text-align: center;" onclick="createDone(this.parentNode)">
+                <span class="hvcenter">
+                    완성 !
+                </span>
+            </div>
+        </div>
+
+        <div class="page background-cyan">
+            <div class="dictionary" style="left:10%; width:80%;">
+                <div class = "title" style="color: white">     
+                    단어들을 확인합니다.
+                </div>
+
+                <table class="hcenter" style="top:80px;">
+                    <tbody style="width:80%">
+                        <th class="dict-th" style="width:50%">단어</th>
+                        
+                        <tr class="word">
+                            <td class="dict-td" style="text-align: center;">Apple</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+            <div class="next-button hcenter" style="text-align: center;" onclick="createProgression(this.parentNode);">
+                <span class="hvcenter">
+                    생성하기
+                </span>
+            </div>
+        </div>
+
+        <div class="page background-light-cyan">
+
+            <div class="dictionary">    
+                <div class="title">
+                    단어장을 선택하세요!
+                </div>
+                <div class="private">
+                    <div class="subtitle">
+                        개인 단어장
+                    </div>
+                    <div class="button uncheck" onclick="location.href='/dictionary.html'">
+                        <span class = "hvcenter">
+                            새 단어장 만들기
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="public">
+                    <div class="subtitle">
+                        공용 단어장
+                    </div>
+                    <div class="button dictbutton uncheck" onclick="workbookClick(this)">
+                        <span class="hvcenter">
+                            <a id="title">{0}</a>
+                            <br>
+                            <span id="desc" style="position: relative; font-size:1vh">
+                                조회수 : {1}
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="next-button hcenter" style="text-align: center;" onclick="changeWords(this.parentNode);">
+                <span class="hvcenter">
+                    다음으로
+                </span>
+            </div>
+        </div>
+
+        <div class="header">
+            <div class="ledge">
+                학습장 추가하기 !
+            </div>
+
+            <div class="redge" onclick="location.href='/'">
+                홈으로
+            </div>
+        </div>
+    </body>
+
+    <script>
+        workbooks = {};
+
+        checkedWorkbooks = [];
+        words = [];
+
+        studybookId = null;
+
+        progressDefault = "새 학습장";
+
+        GlobalUsername = null;
+        GlobalUserid = null;
+
+        function postData(url, data){
+                return new Promise(
+                    function(resolve, reject) {
+                        console.log("Promise Entrance");
+                        var httpRequest = new XMLHttpRequest();
+
+                        httpRequest.onreadystatechange = function() {
+                            if (this.readyState === this.DONE){
+                                if (this.status === 200){
+                                    resolve(httpRequest.responseText);
+                                }else{
+                                    reject(this.status);
+                                }
+                            }
+                        };
+                        
+                        httpRequest.open("POST", url, true);
+                        httpRequest.setRequestHeader('Content-Type', 'application/json');
+                        httpRequest.send(JSON.stringify(data));
+                    }
+                );
+            };
+
+        function changeWords(element){
+            var wordInst = document.getElementsByClassName("word")[0];
+            var wordObj = wordInst.cloneNode(true);
+            var wordInstParent = wordInst.parentNode;
+            
+            wordInstParent.removeChild(wordInst);
+
+            var checkedElements = document.getElementsByClassName("check");
+            
+            checkedWorkbooks = [];
+
+            for (var i=0; i<checkedElements.length; i++){
+                var checkedElement = checkedElements[i];
+                var workbookId = checkedElement.getAttribute("did");
+                
+                checkedWorkbooks.push(workbookId);
+            }
+
+            words = [];
+
+            workbooks.forEach(workbook => {
+                if (checkedWorkbooks.includes(workbook._id)){
+                    words = words.concat(workbook.dictionaryArray);
+                }
+            });
+
+            words.forEach((word) => {
+
+                var wordObjInst = wordObj.cloneNode(true);
+                var tds = wordObjInst.getElementsByTagName("td");
+                tds[0].innerText = word.spell;
+                //tds[1].innerText = word.meanings;
+
+                wordInstParent.appendChild(wordObjInst);
+            });
+
+            moveToLeft(element);
+
+            onResize();
+        }
+
+        function moveToLeft(element){
+            element.classList.add("left_100");
+        }
+
+        function setCookie(name, value, day) {
+            var date = new Date();
+            date.setTime(date.getTime() + day * 60 * 60 * 24 * 1000);
+            document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+        };
+        
+        function getCookie(name) {
+            var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+            return value? value[2] : null;
+        };
+
+        function workbookClick(document){
+            document.classList.toggle("uncheck");
+            document.classList.toggle("check");
+        }
+        
+        function comma(num){
+            var len, point, str; 
+            
+            num = num + ""; 
+            point = num.length % 3 ;
+            len = num.length; 
+        
+            str = num.substring(0, point); 
+            while (point < len) { 
+                if (str != "") str += ","; 
+                str += num.substring(point, point + 3); 
+                point += 3; 
+            } 
+            
+            return str;
+        
+        }
+
+        function googleLogin(){
+            return new Promise((resolve, reject) => {
+                var provider = new firebase.auth.GoogleAuthProvider();
+                firebase.auth().signInWithPopup(provider).then(function(result) {
+                    // This gives you a Google Access Token. You can use it to access the Google API.
+                    var token = result.credential.accessToken;
+                    // The signed-in user info.
+                    var user = result.user;
+                    
+                    GlobalUsername = result.additionalUserInfo.profile.name;
+                    GlobalUserid = result.additionalUserInfo.profile.id;
+
+                    setCookie("googleUsername", GlobalUsername, 7);
+                    setCookie("googleUserid", GlobalUserid, 7);
+
+                    console.log("GlobalUsername : " + GlobalUsername);
+
+                    resolve();
+                }).catch(function(error) {
+                    // Handle Errors here.
+                    var errorCode = error.code;
+                    var errorMessage = error.message;
+                    // The email of the user's account used.
+                    var email = error.email;
+                    // The firebase.auth.AuthCredential type that was used.
+                    var credential = error.credential;
+                    // ...
+                    console.log("Google Login Error..");
+                    console.log(error);
+
+                    reject();
+                });
+            });
+        }
+
+        function onResize(){
+            /* ledge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("ledge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+amount+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* redge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("redge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+(parentWidth - elementWidth - amount)+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* hvcenter 클래스를 가진 html 태그를 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hvcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((- elementWidth)/2);
+                
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+xamount+"px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* hvtablecenter 클래스를 가진 html 태그를 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hvtablecenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((parentWidth - elementWidth)/2);
+
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+xamount+"px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+            
+            /* hcenter 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((parentWidth - elementWidth)/2);
+                var translate = "translate("+xamount+"px, 0px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+        
+            /* dictionary 클래스를 가진 html 태그의 세로 크기를 변경합니다 */
+
+            var elements = document.getElementsByClassName("dictionary");
+                        
+            for (var i=0; i<elements.length; i++){
+                var element = elements[i];
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                element.style.height = parentHeight - 160;
+            };
+        }
+
+        function toCheck(element){
+            changeWords(() => {
+                moveToLeft(element);
+            });
+        }
+
+        createDone = async (element) => {
+            var progressNameInput = document.getElementById("progressName");
+            var name = progressNameInput.value;
+
+            if (name != progressDefault){
+                var renameResult = await postData("/progression/rename", {
+                    progerssionId : studybookId,
+                    rename : name
+                });
+
+                console.log(renameResult);
+            }
+
+            element.classList.add("left_100");
+
+            location.href = "/";
+        };
+
+        createProgression = async (element) => {
+            var progressionName = "새 학습장";
+            
+            var progressionResult = await postData("/progression/create", {
+                dictIds : checkedWorkbooks,
+                progressionName : progressionName,
+                userId : GlobalUserid
+            });
+
+            progressionResult = JSON.parse(progressionResult);
+            
+            studybookId = progressionResult._id;
+
+            moveToLeft(element);
+        };
+
+        loadWorkBooks = async () => {
+            workbooks = [];
+
+            var dictinst = document.getElementsByClassName("dictbutton")[0];
+            var dictparent = dictinst.parentNode;
+
+            var dictobj = dictinst.cloneNode(true);
+            
+            dictinst.parentNode.removeChild(dictinst);
+
+            //#region Private Dictionary
+            var dicts = JSON.parse(await postData("/dictionary/list", {dictionaryOwner : getCookie("googleUserid")}));
+            var dict_array = dicts.dictionary;
+            workbooks = workbooks.concat(dict_array);
+
+            var private_parent = document.getElementsByClassName("private")[0];
+
+            if (dict_array.length > 0){
+                dict_array.forEach((dict) => {
+                    var dictinst = dictobj.cloneNode(true);
+
+                    dictinst.setAttribute("did", dict._id);
+                    dictinst.querySelector("span > a").innerText = dict.dictionaryName;
+                    dictinst.querySelector("span > span").innerText = comma(dict.usingCount) + " 회";
+
+                    private_parent.appendChild(dictinst);
+                });
+            }
+            //#endregion
+
+            //#region Public Dictionary
+            var dicts = JSON.parse(await postData("/dictionary/list", {dictionaryOwner : "admin"}));
+            var dict_array = dicts.dictionary;
+            workbooks = workbooks.concat(dict_array);
+
+            dict_array.forEach((dict) => {
+                var dictinst = dictobj.cloneNode(true);
+
+                dictinst.setAttribute("did", dict._id);
+                dictinst.querySelector("span > a").innerText = dict.dictionaryName;
+                dictinst.querySelector("span > span").innerText = comma(dict.usingCount) + " 회";
+
+                dictparent.appendChild(dictinst);
+            });
+            //#endregion
+
+            onResize();
+            
+        };
+
+        loadWorkBooks();
+
+        window.onresize = onResize;
+    
+        onResize();
+        onResize();
+
+        if (getCookie("googleUsername") === null){
+            location.href = "/";
+        }else{
+            GlobalUsername = getCookie("googleUsername");
+            GlobalUserid = getCookie("googleUserid");
+        }
+
+    </script>
+
+    
+</html>

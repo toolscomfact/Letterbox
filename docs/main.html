@@ -1,0 +1,431 @@
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta name="mobile-web-app-capable" content="yes">
+        
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="apple-touch-icon" href="/img/favicon.ico">
+        <title>
+            Fabreze Words
+        </title>
+
+        <style>
+            html, body{
+                background-color: #48B4DC;
+                margin: 0;
+
+                width:100%;
+                height:100%;
+            }
+
+            .header{
+                position: fixed;
+
+                width:100%;
+                height:48px;
+                background-color: #33415C;
+                margin: 0;
+
+                box-shadow: 0px 1px 5px #33415C;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+                color:white;
+            }
+
+            .top{
+                position: absolute;
+
+                width:100%;
+                top:48px;
+            }
+
+            .top .timer{
+                position: absolute;
+
+                width : 20%;
+                height : 40;
+
+                left : 40%;
+                top : 15;
+
+                background-color: white;
+                color:darkslategrey;
+                
+                border-radius: 6px;
+
+                box-shadow: 0px 0px 4px grey;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+            }
+
+            .top .spell{
+                position: relative;
+
+                width:80%;
+                height:80%;
+
+                color : white;
+                
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 800;
+                font-size: 5vh;
+
+                margin : 30 10% 30 10%;
+            }
+
+            .bottom{
+                position: absolute;
+
+                width:100%;
+                height:40%;
+                bottom:0px;
+            }
+
+            .bottom .button{
+                position: relative;
+
+                width:96%;
+                height:28%;
+
+                background-color: #ffffff;
+                box-shadow: 0px 0px 4px gray;
+                color:darkslategrey;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+
+                margin : 10 10 10 10;
+
+                border-radius: 4px;
+
+                text-align: center;
+            }
+
+            .bottom .correct{
+                background-color: #80B918;
+                color : white;
+            }
+
+            .bottom .incorrect{
+                background-color: #D00000;
+                color : white;
+            }
+
+            .hvcenter{
+                width:95%;
+                text-align: center;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <div class = "top">
+            <div class = "spell" style="text-align: center;">
+                <span class = "hvcenter">
+                    <a id="word-spell">{0}</a>
+                    <br>
+                    <a style="font-size: 2.5vh; font-weight: 400;" id="word-pron">
+                        {1}
+                    </a>
+                </span>
+            </div>
+        </div>
+
+        <div class = "bottom">
+            <div class = "button" value="" id="answer-button" onclick="answerClick(this);">
+                <a class = "hvcenter">
+                   {0}
+                </a> 
+            </div>
+        </div>
+
+        
+        <div class="header">
+            <div class = "ledge">
+                Fabreze Words
+            </div>
+            <div class = "redge" onclick="location.href='/'">
+                홈으로
+            </div>
+        </div>
+    </body>
+
+    <script>
+        answers = null;
+        problem = null;
+
+        function postData(url, data){
+            return new Promise(
+                function(resolve, reject) {
+                    var httpRequest = new XMLHttpRequest();
+
+                    httpRequest.onreadystatechange = function() {
+                        if (this.readyState === this.DONE){
+                            if (this.status === 200){
+                                resolve(httpRequest.responseText);
+                            }else{
+                                reject(this.status);
+                            }
+                        }
+                    };
+                    
+                    httpRequest.open("POST", url, true);
+                    httpRequest.setRequestHeader('Content-Type', 'application/json');
+                    httpRequest.send(JSON.stringify(data));
+                }
+            );
+        };
+
+        function setCookie(name, value, day) {
+            var date = new Date();
+            date.setTime(date.getTime() + day * 60 * 60 * 24 * 1000);
+            document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+        };
+        
+        function getCookie(name) {
+            var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+            return value? value[2] : null;
+        };
+
+        answerClick = async (element) => {
+            var clickedAnswer = element.getAttribute("value");
+            var answer = problem.word.meanings;
+
+            if (clickedAnswer === answer){
+                element.classList.add("correct");
+
+                await postData("/word/select", {
+                    progressionId : getCookie("progressionId"),
+                    index : problem.index,
+                    correct : true
+                });
+            }else{
+                element.classList.add("incorrect");
+
+                var buttonElements = document.getElementsByClassName("button");
+                for (var i=0; i<buttonElements.length; i++){
+                    var buttonElement = buttonElements[i];
+
+                    if (buttonElement.getAttribute("value") === answer){
+                        buttonElement.classList.add("correct");
+                        break;
+                    }
+                }
+
+                await postData("/word/select", {
+                    progressionId : getCookie("progressionId"),
+                    index : problem.index,
+                    correct : false
+                });
+            }
+
+            setTimeout(wordReload, 1000);
+        }
+
+        function randomRange(min, max){
+            var size = max - min;
+            return Math.floor(Math.random()*size+min);
+        }
+
+        var answerButtonInst = document.getElementById("answer-button");
+        answerButtonObject = answerButtonInst.cloneNode(true);
+        answerButtonParent = answerButtonInst.parentNode;
+
+        function removeAllAnswers(){
+            while ( answerButtonParent.hasChildNodes() ) { answerButtonParent.removeChild( answerButtonParent.firstChild ); }
+        }
+
+        function addAnswerElement(){
+            var answerButtonInst = answerButtonObject.cloneNode(true);
+            answerButtonParent.appendChild(answerButtonInst);
+
+            return answerButtonInst;
+        }
+
+        removeAllAnswers();
+
+        wordReload = async () => {
+            var wordResult = await postData("/word/get", {progressionId : getCookie("progressionId")});
+            wordResult = JSON.parse(wordResult);
+
+            console.log(wordResult);
+
+            var ok = wordResult.ok;
+            if (ok === 0){
+                alert("에러 발생!");
+            }else if (ok === 2){
+                location="/";
+                alert("전부 암기하셨습니다!")
+            }else{
+                problem = wordResult.problem;
+                answers = wordResult.answers;
+                answers.splice(randomRange(0, 2), 0, problem);
+
+                var spellInst = document.getElementById("word-spell");
+                spellInst.innerText = problem.word.spell;
+
+                //var pronInst = document.getElementById("word-pron");
+                //pronInst.innerText = "발음";
+
+                removeAllAnswers();
+
+                for (var i=0; i<answers.length; i++){
+                    var answer = answers[i];
+
+                    var elem = addAnswerElement();
+                    elem.setAttribute("value", answer.word.meanings);
+                    
+                    elem.getElementsByTagName("a")[0].innerText = answer.word.meanings;
+                    
+                }
+            }
+
+            onResize();
+            onResize();
+        };
+
+        onLoad = async () => {
+            wordReload();
+        };
+
+        onResize = () => {
+
+            /* ledge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("ledge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+amount+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* redge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("redge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+(parentWidth - elementWidth - amount)+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* hvcenter 클래스를 가진 html 태그를 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hvcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((- elementWidth)/2);
+                
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+xamount+"px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+            
+            /* vcenter 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("vcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate(0px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                //element.style.transform = translate;
+            }
+            
+            /* top 클래스를 가진 html 태그의 세로크기를 지정합니다. (body.height - bottom.height - header.height) */
+
+            var topElement = document.getElementsByClassName("top")[0];
+            var headerElement = document.getElementsByClassName("header")[0];
+            var bottomElement = document.getElementsByClassName("bottom")[0];
+            var bodyElement = document.getElementsByTagName("body")[0];
+
+            var topHeight = bodyElement.offsetHeight - headerElement.offsetHeight - bottomElement.offsetHeight;
+            topElement.style.height = topHeight; 
+
+            /* spell 클래스를 가진 html 태그의 세로크기를 지정합니다 */
+
+            var spellElement = document.getElementsByClassName("spell")[0];
+            spellElement.style.height = topHeight - 60;
+        }
+
+        window.onresize = onResize;
+
+        onResize();
+        onResize();
+
+        if (getCookie("progressionId") === null){
+            // progression 쿠키 값이 없으면 홈페이지로 이동
+            location.href = "/";
+        }else{
+
+        }
+
+        onLoad();
+
+        /*
+        timer = 62;
+        setInterval(() => {
+            timer --;
+
+            var minute = Math.floor(timer / 60);
+            var second = Math.floor(timer % 60);
+
+            if (minute > 0){
+                document.getElementById("timer").innerText = minute + ":" + second;
+            }else{
+                document.getElementById("timer").innerText = second;
+            }
+
+            onResize();
+        }, 1000);
+        */
+    </script>
+</html>

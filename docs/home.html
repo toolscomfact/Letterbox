@@ -1,0 +1,326 @@
+<html>
+    <head>    
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta name="mobile-web-app-capable" content="yes">
+
+        <title>
+            Fabreze Words
+        </title>
+
+        <style>
+            body{
+                width:100%;
+                height:100% ;
+
+                margin:0;
+
+                background-color: #48B4DC;
+            }
+
+            .header{
+                position :fixed;
+                background-position-y: 0;
+
+                top : 0;
+
+                width:100%;
+                height:48px;
+
+                background-color: #33415C;
+                color : white;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+
+                box-shadow: 0px 0px 5px #33415C;
+            }
+
+            .progress{
+                position :relative;
+                top:80px;
+                left:10%;
+                width:80%;
+                height:100px;
+                margin-bottom:30px;
+
+                color : darkslategray;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+
+                background-color: white;
+                border-radius: 5px;
+                box-shadow: 0px 0px 4px gray;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <div>
+            <div id="progress" class="progress" style="text-align: center; font-weight: 800;" value="" onclick="gotoMain(this);">
+                <span class="hvcenter">
+                    {0}
+                </span>
+            </div>
+        </div>
+
+        <div class="progress" style="text-align: center;" onclick="location.href='/workbook.html'">
+            <span class="hvcenter">
+                <span style="font-size : 6vh;">
+                 +
+                </span>
+                <br>
+                <div style="font-size: 2vh; transform: translate(0, -20px);">
+                 새 학습장 추가하기
+                </div>
+            </span>
+        </div>
+        
+        <div class="header">
+            <a class="ledge">
+                Fabreze Words 
+            </a>
+
+            <a id ="redge" class="redge">
+                로그인 중입니다.
+            </a>
+        </div>
+    </body>
+
+    
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.21.1/firebase-app.js"></script>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+        https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/7.21.1/firebase-analytics.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.21.1/firebase-auth.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        var firebaseConfig = {
+            apiKey: "AIzaSyCOHxHnJdUrpZUT-YntnIBDe4vkasfngYM",
+            authDomain: "febreze-words.firebaseapp.com",
+            databaseURL: "https://febreze-words.firebaseio.com",
+            projectId: "febreze-words",
+            storageBucket: "febreze-words.appspot.com",
+            messagingSenderId: "894402131559",
+            appId: "1:894402131559:web:0612fe3c6c31b4067806c2",
+            measurementId: "G-8G7X0CFLYZ"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
+    </script>
+    
+    <script>
+        GlobalUsername = "";
+        GlobalUserid = "";
+
+        function postData(url, data){
+            return new Promise(
+                function(resolve, reject) {
+                    console.log("Promise Entrance");
+                    var httpRequest = new XMLHttpRequest();
+
+                    httpRequest.onreadystatechange = function() {
+                        if (this.readyState === this.DONE){
+                            if (this.status === 200){
+                                resolve(httpRequest.responseText);
+                            }else{
+                                reject(this.status);
+                            }
+                        }
+                    };
+                    
+                    httpRequest.open("POST", url, true);
+                    httpRequest.setRequestHeader('Content-Type', 'application/json');
+                    httpRequest.send(JSON.stringify(data));
+                }
+            );
+        };
+
+        function setCookie(name, value, day) {
+            var date = new Date();
+            date.setTime(date.getTime() + day * 60 * 60 * 24 * 1000);
+            document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+        };
+        
+        function getCookie(name) {
+            var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+            return value? value[2] : null;
+        };
+
+        function gotoMain(element){
+            var progressionId = element.getAttribute("value");
+
+            setCookie("progressionId", progressionId, 7);
+            location.href = "/main.html";
+        }
+
+        function googleLogin(){
+            return new Promise((resolve, reject) => {
+                var provider = new firebase.auth.GoogleAuthProvider();
+                firebase.auth().signInWithPopup(provider).then(function(result) {
+                    // This gives you a Google Access Token. You can use it to access the Google API.
+                    var token = result.credential.accessToken;
+                    // The signed-in user info.
+                    var user = result.user;
+                    
+                    GlobalUsername = result.additionalUserInfo.profile.name;
+                    GlobalUserid = result.additionalUserInfo.profile.id;
+
+                    setCookie("googleUsername", GlobalUsername, 7);
+                    setCookie("googleUserid", GlobalUserid, 7);
+
+                    console.log("GlobalUsername : " + GlobalUsername);
+
+                    resolve();
+                }).catch(function(error) {
+                    // Handle Errors here.
+                    var errorCode = error.code;
+                    var errorMessage = error.message;
+                    // The email of the user's account used.
+                    var email = error.email;
+                    // The firebase.auth.AuthCredential type that was used.
+                    var credential = error.credential;
+                    // ...
+                    console.log("Google Login Error..");
+                    console.log(error);
+
+                    reject();
+                });
+            });
+        }
+
+        onResize = () => {
+
+            /* ledge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("ledge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+amount+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* redge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("redge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+(parentWidth - elementWidth - amount)+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* hvcenter 클래스를 가진 html 태그를 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hvcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((- elementWidth)/2);
+                
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+xamount+"px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+            
+            /* vcenter 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("vcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate(0px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                //element.style.transform = translate;
+            }
+        }
+
+        window.onresize = onResize;
+
+        onResize();
+        onResize();
+
+        login = async() => {
+            if (getCookie("googleUsername") === null){
+                await googleLogin();
+            }else{
+                console.log("Using cookie");
+
+                GlobalUsername = getCookie("googleUsername");
+                GlobalUserid = getCookie("googleUserid");
+            }
+
+            document.getElementById("redge").innerText = GlobalUsername + "님, 환영합니다!";
+
+            var progression = JSON.parse(await postData("/progression/list", {userId : GlobalUserid}));
+            
+            progression = progression.progressions;
+
+            var progressNode = document.getElementById("progress");
+            var progressParent = progressNode.parentNode;
+            var progressObject = progressNode.cloneNode(true);
+            progressParent.removeChild(progressNode);
+
+            progression.forEach(progress => {
+                var progressInst = progressObject.cloneNode(true);
+                progressInst.getElementsByTagName("span")[0].innerText = progress.progressName;
+                progressInst.setAttribute("value", progress._id);
+
+                progressParent.appendChild(progressInst);
+            });
+            
+            onResize();
+
+        }
+
+        login();
+    </script>
+</html>

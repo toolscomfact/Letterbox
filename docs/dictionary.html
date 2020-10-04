@@ -1,0 +1,441 @@
+<html>
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta name="mobile-web-app-capable" content="yes">
+        
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="apple-touch-icon" href="/img/favicon.ico">
+        <title>
+            Fabreze Words
+        </title>
+    
+        <style>
+            html, body{
+                background-color: #48B4DC;
+                margin: 0;
+
+                width:100%;
+                height:100%;
+            }
+
+            .header{
+                position: fixed;
+
+                top : 0;
+                width:100%;
+                height:48px;
+                background-color: #33415C;
+                margin: 0;
+
+                box-shadow: 0px 1px 5px #33415C;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+                color:white;
+            }
+
+            .content{
+                position: relative;
+
+                left : 10%;
+                width : 80%;
+                top : 70px;
+            }
+
+            .title{
+                position: relative;
+                text-align: center;
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 700;
+                font-size: 4vh;
+                color:white;
+            }
+
+            .subtitle{
+                position: relative;
+                text-align: center;
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 3vh;
+                color:white;
+            }
+
+            .textInput{
+                display:block; 
+                width:100%; 
+                
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 700;
+                font-size: 2vh;
+
+                border-left: 0px; 
+                border-right: 0px; 
+                border-top: 0px; 
+                border-color: black;
+            
+                background-color:transparent;
+
+                color:black;
+
+                margin-top:10px;
+            }
+
+            .textButton{
+                display:block; 
+                width:160px; 
+                height:50px; 
+                margin-left:auto; 
+                margin-right:auto; 
+                margin-top:10px;
+                
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 700;
+                font-size: 2vh;
+
+                border:none;
+            }
+
+            table th{
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 700;
+                font-size: 2vh;
+
+                width: 50%;
+            }
+
+            table td{
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 700;
+                font-size: 2vh;
+
+                width: 47%;
+            }
+
+            .page{
+                position: absolute;
+
+                width:100%;
+                height:100%;
+            }
+
+            .left_100{
+                animation-duration: 0.3s;
+                animation-name:l100;
+                animation-fill-mode:forwards;
+            }
+
+            .background-darkcyan{
+                background-color: #0096C7;
+            }
+
+            .background-blue{
+                background-color: #48B4DC;
+            }
+
+            @keyframes l100{
+                from {
+                    left : 0%;
+                }
+
+                to {
+                    left : -100%;
+                }
+            }
+        </style>
+
+    </head>
+
+    <body>
+
+        <div class="page background-darkcyan">
+            <div class="content">
+                <div class="title">
+                    단어장이 완성되었습니다.
+                </div>
+
+                <div>
+                    <div style="margin:auto" class="subtitle">이름을 변경하시겠습니까?</div>
+                    <input type="text" id="dictionary-rename" class="textInput" style="display: block; color:white" placeholder="새 단어장" value="새 단어장">
+                    <input type="button" class="textButton" style="display: block;" value="확인" onclick="done();">
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="page background-blue">    
+            <div class="content">
+                <div class="title">  
+                    단어장을 추가합니다.
+                </div>
+            
+                <table style="text-align: center; margin-left:auto; margin-right: auto;">
+                    <th style="text-align: right;">스펠링</th>
+                    <th style="text-align: left;">의미</th>
+
+                    <tr class="table-row" id="table-row">
+                        <td style="text-align: right;">{0}</td>
+                        <td style="text-align: left">{1}</td>
+                        <td style="text-align: center; width:6%; color:red; font: size 4vh;" onclick="this.parentNode.parentNode.removeChild(this.parentNode)">X</td>
+                    </tr>
+                </table>
+
+                <div class="hcenter" style="position: absolute; display: block;">
+                    <input class="textInput" type="text" id="word-spell" placeholder="스펠링">
+                    <input class="textInput" type="text" id="word-meaning" placeholder="의미">
+                </div>
+
+                <input type="button" class="textButton" onclick="addWord();" value="단어 추가">
+                <input type="button" class="textButton" onclick="addDictionary(this.parentNode.parentNode);" value="확인">
+            </div>
+
+        </div>
+            
+
+        <div class="header">
+            <div class = "ledge">
+                Fabreze Words
+            </div>
+            <div class = "redge" onclick="location.href='/'">
+                홈으로
+            </div>
+        </div>
+    </body>
+
+    <script>
+        //wordData = 
+
+        dictionaryId = null;
+
+        var tableRowInst = document.getElementById("table-row");
+        tableRowObject = tableRowInst.cloneNode(true);
+        
+        tableParent = tableRowInst.parentNode;
+        tableParent.removeChild(tableRowInst);
+
+        function postData(url, data){
+            return new Promise(
+                function(resolve, reject) {
+                    console.log("Promise Entrance");
+                    var httpRequest = new XMLHttpRequest();
+
+                    httpRequest.onreadystatechange = function() {
+                        if (this.readyState === this.DONE){
+                            if (this.status === 200){
+                                resolve(httpRequest.responseText);
+                            }else{
+                                reject(this.status);
+                            }
+                        }
+                    };
+                    
+                    httpRequest.open("POST", url, true);
+                    httpRequest.setRequestHeader('Content-Type', 'application/json');
+                    httpRequest.send(JSON.stringify(data));
+                }
+            );
+        };
+
+        function setCookie(name, value, day) {
+            var date = new Date();
+            date.setTime(date.getTime() + day * 60 * 60 * 24 * 1000);
+            document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+        };
+        
+        function getCookie(name) {
+            var value = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+            return value? value[2] : null;
+        };
+
+        function addWord(){
+            var spellElement = document.getElementById("word-spell");
+            var meanElement = document.getElementById("word-meaning");
+
+            var spellValue = spellElement.value;
+            var meanValue = meanElement.value;
+
+            if (spellValue !== "" && meanValue != ""){
+
+            var tableRowInst = tableRowObject.cloneNode(true);
+                tableRowInst.getElementsByTagName("td")[0].innerText = spellValue;
+                tableRowInst.getElementsByTagName("td")[1].innerText = meanValue;
+
+                spellElement.value = "";
+                meanElement.value = "";
+
+                tableParent.appendChild(tableRowInst);
+            }
+        }
+
+        function onResize(){
+            /* ledge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("ledge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+amount+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* redge 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("redge");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var amount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+(parentWidth - elementWidth - amount)+"px, "+amount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* hvcenter 클래스를 가진 html 태그를 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hvcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((- elementWidth)/2);
+                
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+xamount+"px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+
+            /* hvtablecenter 클래스를 가진 html 태그를 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hvtablecenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((parentWidth - elementWidth)/2);
+
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+xamount+"px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
+            
+            /* hcenter 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hcenter");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((parentWidth - elementWidth)/2);
+                var translate = "translate("+xamount+"px, 0px)";
+
+                element.style.position = "relative";
+                element.style.transform = translate;
+            }
+        
+            /* dictionary 클래스를 가진 html 태그의 세로 크기를 변경합니다 */
+
+            var elements = document.getElementsByClassName("dictionary");
+                        
+            for (var i=0; i<elements.length; i++){
+                var element = elements[i];
+                var elementWidth = element.offsetWidth ;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                element.style.height = parentHeight - 160;
+            };
+        }
+
+        addDictionary = async (element) => {
+            var array = [];
+            var tableRows = document.getElementsByClassName("table-row");
+
+            for (var i=0; i<tableRows.length; i++){
+                var tableRow = tableRows[i];
+                array.push({
+                    spell : tableRow.getElementsByTagName("td")[0].innerText,
+                    meanings : tableRow.getElementsByTagName("td")[1].innerText
+                });
+            }
+
+            dictionaryId = await postData("/dictionary/add", {
+                dictionaryArray : array,
+                dictionaryName : "새 단어장",
+                dictionaryOwner : getCookie("googleUserid")
+            })
+            dictionaryId = JSON.parse(dictionaryId);
+            dictionaryId = dictionaryId._id;
+
+            element.classList.add("left_100");
+        };
+
+        done = async () => {
+            var textElement = document.getElementById("dictionary-rename");
+            var textRename = textElement.value;
+
+            if (textRename !== "새 단어장"){
+                var result = await postData("/dictionary/rename", {
+                    dictionaryId : dictionaryId,
+                    dictionaryName : textRename
+                })
+            }
+            
+            location = "/";
+        };
+
+        if (getCookie("googleUsername") === null){
+            location.href = "/";
+        }
+
+        window.onresize = onResize;
+
+        onResize();
+        onResize();
+
+    </script>
+</html>
