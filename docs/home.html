@@ -3,9 +3,10 @@
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <meta name="mobile-web-app-capable" content="yes">
-
+        <script data-ad-client="ca-pub-6528338966190448" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+        
         <title>
-            Fabreze Words
+            Letterbox
         </title>
 
         <style>
@@ -55,16 +56,71 @@
                 border-radius: 5px;
                 box-shadow: 0px 0px 4px gray;
             }
+
+            .progress .close{
+                position: absolute;
+                top : 10px;
+                right : 10px;
+                width : 20px;
+                height : 20px;
+
+                color:red;
+            }
+
+            .modal{
+                position: fixed;
+                width : 50%;
+                height : 20%;
+
+                top : 1%;
+                left : 25%;
+
+                border-radius: 5px;
+
+                margin : auto;
+
+                background-color: white;
+                box-shadow: 5px 5px 10px gray;
+
+                font-family: 'Noto Sans KR', sans-serif;
+                font-weight: 400;
+                font-size: 2vh;
+
+                color : darkslategray;
+                
+            }
+
+            .disappear{
+                animation-duration: 0.3s;
+                animation-name:disappear;
+                animation-fill-mode:forwards;
+            }
+
+            @keyframes disappear{
+                from {
+                    opacity: 1;
+                }
+
+                to {
+                    opacity: 0;
+                }
+            }
         </style>
     </head>
 
     <body>
 
         <div>
-            <div id="progress" class="progress" style="text-align: center; font-weight: 800;" value="" onclick="gotoMain(this);">
-                <span class="hvcenter">
-                    {0}
+            <div id="progress" class="progress" style="text-align: center; font-weight: 800;" value="">
+                <div style="position: absolute; width:100%; height:100%" onclick="gotoMain(this.parentNode)">
+                    <span class="hvcenter">
+                        {0}
+                    </span>
+                </div>
+                <span class="close" onclick="destroyProgress(this);">
+                    X
                 </span>
+                
             </div>
         </div>
 
@@ -82,12 +138,18 @@
         
         <div class="header">
             <a class="ledge">
-                Fabreze Words 
+                Letterbox
             </a>
 
             <a id ="redge" class="redge">
                 로그인 중입니다.
             </a>
+        </div>
+
+        <div id="modal" class="modal">
+            <span class="hvcenter2">
+                {0}
+            </span>
         </div>
     </body>
 
@@ -261,6 +323,28 @@
                 element.style.position = "absolute";
                 element.style.transform = translate;
             }
+
+            /* hvcenter2 클래스를 가진 html 태그를 가운데정렬 합니다 */
+
+            var elements = document.getElementsByClassName("hvcenter2");
+
+            for (var i=0; i<elements.length; i++){
+                var element = elements.item(i) ;
+                var elementWidth = element.offsetWidth;
+                var elementHeight = element.offsetHeight;
+
+                var parent = element.parentNode;
+                var parentWidth = parent.offsetWidth;
+                var parentHeight = parent.offsetHeight;
+
+                var xamount = ((parentWidth - elementWidth)/2);
+                
+                var yamount = ((parentHeight - elementHeight)/2);
+                var translate = "translate("+xamount+"px, "+yamount+"px)";
+
+                element.style.position = "absolute";
+                element.style.transform = translate;
+            }
             
             /* vcenter 클래스를 가진 html 태그를 세로로 가운데정렬 합니다 */
 
@@ -279,7 +363,7 @@
                 var translate = "translate(0px, "+yamount+"px)";
 
                 element.style.position = "absolute";
-                //element.style.transform = translate;
+                element.style.transform = translate;
             }
         }
 
@@ -311,7 +395,7 @@
 
             progression.forEach(progress => {
                 var progressInst = progressObject.cloneNode(true);
-                progressInst.getElementsByTagName("span")[0].innerText = progress.progressName;
+                progressInst.getElementsByTagName("div")[0].getElementsByTagName("span")[0].innerText = progress.progressName;
                 progressInst.setAttribute("value", progress._id);
 
                 progressParent.appendChild(progressInst);
@@ -321,6 +405,40 @@
 
         }
 
+        destroyProgress = async(element) => {
+            var result = JSON.parse(await postData("/progression/remove", {progressionId : element.parentNode.getAttribute("value")}));
+            
+            element.parentNode.parentNode.removeChild(element.parentNode);
+        };
+
         login();
+
+        var modalInst = document.getElementById("modal");
+        modalObject = modalInst.cloneNode(true);
+        modalParent = modalInst.parentNode;
+
+        modalInst.parentNode.removeChild(modalInst);
+
+        function spawnModal(){
+            var modalInst = modalObject.cloneNode(true);
+
+            modalParent.appendChild(modalInst);
+            setInterval(() => {
+                modalInst.classList.add("disappear");
+            }, 10000);
+
+            return modalInst.getElementsByTagName("span")[0];
+        }
+
+        console.log(getCookie("modalCookie"));
+        var modalCookie = JSON.parse(decodeURI(getCookie("modalCookie")));
+
+        if (modalCookie !== null){
+            modalCookie.forEach((modal) => {
+                spawnModal().innerText = modal;
+            });
+        }
+
+        setCookie("modalCookie", "[]", 0);
     </script>
 </html>

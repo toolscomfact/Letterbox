@@ -3,7 +3,10 @@ const util = require('util');
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("express");
+const cookieParser = require('cookie-parser');
 const redis = require("redis");
+const https = require("https");
+const fs = require("fs");
 const { randomInt } = require("crypto");
 //#endregion
 
@@ -20,6 +23,12 @@ redisClient.rpopAsync = util.promisify(redisClient.rpop);
 redisClient.lsetAsync = util.promisify(redisClient.lset);
 redisClient.lposAsync = util.promisify(redisClient.lpos);
 redisClient.delAsync = util.promisify(redisClient.del);
+//#endregion
+
+//#region Pre initialized function
+function randomName() {
+    return (Math.random()+1).toString(36).substring(2);
+}
 //#endregion
 
 //#region Mongoose Scheme-Model
@@ -42,6 +51,11 @@ let dictionarySchema = new Schema({
     usingCount : {
         type: Number,
         default: 0
+    },
+
+    shareSuffix : {
+        type : String,
+        default : null
     }
 });
 
@@ -75,31 +89,32 @@ let progressionModel = mongoose.model("Progression", userProgressionSchema);
 
 let app = express();
 app.use(bodyParser.json());
+app.use(cookieParser());
 
-let absoultePath = require('path').dirname(require.main.filename)+"\\docs";
+let absoultePath = require('path').dirname(require.main.filename)+"/docs";
 
 let serverBooting = async () => {
     // Mongodb Connect
     await mongoose.connect("mongodb://13.125.19.118/febrezewords");
 
     //#region Render sites
-    app.get("", (req, res) => {
+    app.get("", async (req, res) => {
         res.sendFile(absoultePath + "/home.html");
     });
 
-    app.get("/main.html", (req, res) => {
+    app.get("/main.html", async (req, res) => {
         res.sendFile(absoultePath + "/main.html");
     });
 
-    app.get("/home.html", (req, res) => {
+    app.get("/home.html", async (req, res) => {
         res.sendFile(absoultePath + "/home.html");
     });
 
-    app.get("/workbook.html", (req, res) => {
+    app.get("/workbook.html", async (req, res) => {
         res.sendFile(absoultePath + "/workbook.html");
     });
     
-    app.get("/dictionary.html", (req, res) => {
+    app.get("/dictionary.html", async (req, res) => {
         res.sendFile(absoultePath + "/dictionary.html");
     });
     //#endregion
@@ -185,6 +200,135 @@ let serverBooting = async () => {
                 err : String(error)
             })
         }
+    });
+    
+    app.post("/dictionary/remove", async (req, res) => {
+        try{
+            let dictionaryId = req.body.dictionaryId;
+
+            let result = await dictionaryModel.remove({
+                _id : mongoose.Types.ObjectId(dictionaryId)
+            });
+
+            res.json({
+                ok : 1,
+                result : result
+            })
+
+        }catch(error){
+            res.json({
+                ok : 0,
+                err : String(error)
+            })
+        }
+    });
+    
+    app.post("/dictionary/copy", async (req, res) => {
+        try{
+            let dictionaryId = req.body.dictionaryId;
+            let dictionaryOwner = req.body.dictionaryOwner;
+
+            let dictionary = await dictionaryModel.findOne({
+                _id : mongoose.Types.ObjectId(dictionaryId)
+            });
+
+            delete dictionary._id;
+            dictionary.dictionaryOwner = dictionaryOwner;
+
+            let result = await dictionaryModel.create(dictionary);
+
+            res.json({
+                ok : 1,
+                result : result
+            })
+
+        }catch(error){
+            res.json({
+                ok : 0,
+                err : String(error)
+            })
+        }
+    });
+    
+    app.post("/dictionary/share", async (req, res) => {
+        try{
+            let dictionaryId = req.body.dictionaryId;
+
+            if (!await dictionaryModel.exists({_id : mongoose.Types.ObjectId(dictionaryId)})){
+                throw "dictionary not exists";
+            }
+
+            let randomStr = "";
+            let result = {};
+            let find = await dictionaryModel.findOne({_id : mongoose.Types.ObjectId(dictionaryId)});
+
+            if (find.shareSuffix !== null){
+                randomStr = find.shareSuffix;
+            }else{
+                while (true){
+                    randomStr = randomName();
+                    
+                    let count = await dictionaryModel.count({shareSuffix : randomStr});
+                    if (count === 0){
+                        break;
+                    }
+                }
+
+                result = await dictionaryModel.update({
+                    _id : mongoose.Types.ObjectId(dictionaryId)
+                }, {
+                    shareSuffix : randomStr
+                });
+            }
+
+            res.json({
+                ok : 1,
+                result : result,
+                suffix : randomStr
+            })
+
+        }catch(error){
+            res.json({
+                ok : 0,
+                err : String(error)
+            })
+        }
+    });
+    
+    app.get("/dictionary/share/:sharesuffix", async (req, res) => {
+        let sharesuffix = req.params.sharesuffix;
+        let googleUserid = req.cookies.googleUserid;
+
+        try{
+            if (googleUserid !== undefined){
+                if (!await dictionaryModel.exists({shareSuffix : sharesuffix})){
+                    throw "dictionary not exists";
+                }else{
+        
+                    let dictionary = await dictionaryModel.findOne({
+                        shareSuffix : sharesuffix
+                    });
+        
+
+                    let newDictionary = new dictionaryModel();
+
+                    newDictionary.dictionaryName = dictionary.dictionaryName;
+                    newDictionary.dictionaryArray = dictionary.dictionaryArray;
+                    newDictionary.dictionaryOwner = googleUserid;
+        
+                    let result = await newDictionary.save();
+
+                    console.log(result);
+
+                    res.cookie("modalCookie", "[\"'"+dictionary.dictionaryName+"' 단어장이 추가되었습니다. \"]")
+                }
+            }
+        }catch (err){
+            console.log(err);
+            res.cookie("modalCookie", "[\"단어장을 추가하는데 실패했습니다....\"]");
+        }
+
+        res.redirect("/");
     });
     //#endregion
 
@@ -293,10 +437,10 @@ let serverBooting = async () => {
 
     app.post("/progression/rename", async (req, res) => {
         try{
-            let progerssionId = req.body.progerssionId;
+            let progressionId = req.body.progressionId;
             let rename = req.body.rename;
 
-            await progressionModel.updateOne({_id : mongoose.Types.ObjectId(progerssionId)}, {$set : {progressName : rename}});
+            await progressionModel.updateOne({_id : mongoose.Types.ObjectId(progressionId)}, {$set : {progressName : rename}});
 
             res.json({
                 ok : 1
@@ -305,6 +449,24 @@ let serverBooting = async () => {
             res.json({
                 ok : 0,
                 err : String(error)
+            })
+        }
+    });
+       
+    app.post("/progression/remove", async (req, res) => {
+        try{
+            let progressionId = req.body.progressionId;
+
+            let result =  await progressionModel.remove({_id : mongoose.Types.ObjectId(progressionId)});
+
+            res.json({
+                ok : 1,
+                result : result
+            });
+        }catch(error){  
+            res.json({
+                ok : 0,
+                error : String(error)
             })
         }
     });
@@ -521,11 +683,21 @@ let serverBooting = async () => {
         }
     });
     //#endregion
-
+    
+    const option = {
+        ca: fs.readFileSync('/etc/letsencrypt/live/ltbox.net/fullchain.pem'),
+        key: fs.readFileSync('/etc/letsencrypt/live/ltbox.net/privkey.pem', 'utf8').toString(),
+        cert: fs.readFileSync('/etc/letsencrypt/live/ltbox.net/cert.pem', 'utf8').toString(),
+      };
+      
     //Listen!
-    app.listen(80, () => {
-        console.log("server open");
-    });
+      https.createServer(option, app).listen(443,() => {
+          console.log("443 port listen");
+      });
+
+      app.listen(80, () => {
+        console.log("80 port listen");
+      });
 };
 
 serverBooting();
