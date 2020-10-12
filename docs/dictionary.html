@@ -263,16 +263,20 @@
             var spellValue = spellElement.value;
             var meanValue = meanElement.value;
 
-            if (spellValue !== "" && meanValue != ""){
+            if (spellValue.startsWith("@")){
+                alert("단어는 @로 시작할 수 없습니다!");
+            }else{
+                if (spellValue !== "" && meanValue != ""){
 
-            var tableRowInst = tableRowObject.cloneNode(true);
-                tableRowInst.getElementsByTagName("td")[0].innerText = spellValue;
-                tableRowInst.getElementsByTagName("td")[1].innerText = meanValue;
+                var tableRowInst = tableRowObject.cloneNode(true);
+                    tableRowInst.getElementsByTagName("td")[0].innerText = spellValue;
+                    tableRowInst.getElementsByTagName("td")[1].innerText = meanValue;
 
-                spellElement.value = "";
-                meanElement.value = "";
+                    spellElement.value = "";
+                    meanElement.value = "";
 
-                tableParent.appendChild(tableRowInst);
+                    tableParent.appendChild(tableRowInst);
+                }
             }
         }
 
@@ -410,15 +414,19 @@
                 });
             }
 
-            dictionaryId = await postData("/dictionary/add", {
-                dictionaryArray : array,
-                dictionaryName : "새 단어장",
-                dictionaryOwner : getCookie("googleUserid")
-            })
-            dictionaryId = JSON.parse(dictionaryId);
-            dictionaryId = dictionaryId._id;
+            if (array.length < 3){
+                alert("단어장에 단어를 최소 3개를 추가하셔야 합니다!")
+            }else{
+                dictionaryId = await postData("/dictionary/add", {
+                    dictionaryArray : array,
+                    dictionaryName : "새 단어장",
+                    dictionaryOwner : getCookie("googleUserid")
+                })
+                dictionaryId = JSON.parse(dictionaryId);
+                dictionaryId = dictionaryId._id;
 
-            element.classList.add("left_100");
+                element.classList.add("left_100");
+            }
         };
 
         done = async () => {

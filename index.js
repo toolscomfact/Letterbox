@@ -8,6 +8,7 @@ const redis = require("redis");
 const https = require("https");
 const fs = require("fs");
 const { randomInt } = require("crypto");
+const { EDEADLK } = require('constants');
 //#endregion
 
 //#region Redis
@@ -15,6 +16,7 @@ let redisClient = redis.createClient(32768, "localhost");
 
 redisClient.lindexRange = util.promisify(redisClient.lindex);
 redisClient.lrangeAsync = util.promisify(redisClient.lrange);
+redisClient.lindexAsync = util.promisify(redisClient.lindex);
 redisClient.llenAsync = util.promisify(redisClient.llen);
 redisClient.lpushAsync = util.promisify(redisClient.lpush);
 redisClient.rpushAsync = util.promisify(redisClient.rpush);
@@ -29,6 +31,53 @@ redisClient.delAsync = util.promisify(redisClient.del);
 function randomName() {
     return (Math.random()+1).toString(36).substring(2);
 }
+
+function getAvailableWord(progression, progressionLearnRate) {
+    let counter = 0;   
+    let wordsLength = progression.dictionaryArray.length;
+    
+    while (true){
+        if (counter >= wordsLength){
+            return null;
+        }
+
+        counter ++;
+
+        let index = 0;
+        if (wordsLength >= 2){
+            index = randomInt(0, wordsLength-1);
+        }
+        let randWord = progression.dictionaryArray[index];
+
+        if (randWord.correct >= progressionLearnRate){
+            // 3회 이상 맞았으면 추가하지 않음
+            continue;
+        }
+
+        return {
+            index : index,
+            word : randWord
+        };
+    }
+};
+
+function getRandomWord(progression) {
+    let index = 0;
+    let wordsLength = progression.dictionaryArray.length;
+
+    if (wordsLength >= 2){
+        index = randomInt(0, wordsLength-1);
+    }
+
+    let randWord = progression.dictionaryArray[index];
+
+    return {
+        index : index,
+        word : randWord
+    };
+}
+
+
 //#endregion
 
 //#region Mongoose Scheme-Model
@@ -481,80 +530,73 @@ let serverBooting = async () => {
         try{
             let progressionId = req.body.progressionId;
             let progression =  await progressionModel.findOne({_id : mongoose.Types.ObjectId(progressionId)});
-
             let progressionLearnRate = progression.learnRate;
 
-            let wordsLength = progression.dictionaryArray.length;
+            let cacheName = progressionId + "_cacheList";
+            let cacheLen = await redisClient.llenAsync(cacheName);
 
-            let getAvailableWord = () => {
-                let counter = 0;
-                while (true){
-                    if (counter >= wordsLength){
-                        return null;
-                    }
-                    counter ++;
+            let replace = false;
+            let empty = false;
 
-                    let index = 0;
-                    if (wordsLength >= 2){
-                        index = randomInt(0, wordsLength-1);
-                    }
-                    let randWord = progression.dictionaryArray[index];
+            let front ;
+            let end = false;
 
-                    if (randWord.correct >= progressionLearnRate){
-                        // 3회 이상 맞았으면 추가하지 않음
-                        continue;
-                    }
-
-                    return {
-                        index : index,
-                        word : randWord
-                    };
-                }
-            };
-
-            let getRandomWord = () => {
-                while (true){
-                    let index = 0;
-                    if (wordsLength >= 2){
-                        index = randomInt(0, wordsLength-1);
-                    }
-
-                    let randWord = progression.dictionaryArray[index];
-
-                    return {
-                        index : index,
-                        word : randWord
-                    };
-                }
-            }
-
-            let cacheListLen = await redisClient.llenAsync(progressionId + "_cacheList");
-            if (cacheListLen < 5){ // 0개, 1개
-                let haveToFill = 5 - cacheListLen; // 0 일때는 2개, 1 일때는 1개
-
-                for (let i=0; i<haveToFill; i++){
-                    let randomWord = getAvailableWord();
-
-                    if (randomWord !== null){
-                        await redisClient.rpushAsync(progressionId  + "_cacheList", JSON.stringify(randomWord));
-                    }
-                }
-            }
-
-            if (await redisClient.llenAsync(progressionId + "_cacheList") > 0){
-                let result = await redisClient.lrangeAsync(progressionId + "_cacheList", 0, 0)
-
-                res.json({
-                    ok : 1,
-                    problem : JSON.parse(result[0]),
-                    answers : [getRandomWord(), getRandomWord()]
-                }); // 데이터 전달
+            if (cacheLen === 0){
+                empty = true;
             }else{
+                front = await redisClient.lindexAsync(cacheName, 0);
+
+                if (front === "@null"){
+                    replace = true;
+                }else{
+                    front = JSON.parse(front);
+                }
+            }
+
+            //#region 맨 앞이 비어있음!
+            if (empty){
+                let available = getAvailableWord(progression, progressionLearnRate);
+
+                if (available === null){
+                    end = true;
+                    // 더 이상 암기할 단어 없음. 암기 완료.
+                }else{
+                    await redisClient.lpushAsync(cacheName, JSON.stringify(available));
+                    front = available;
+                    // 맨 앞에 available 을 넣음!
+                }
+            }
+            //#endregion
+
+            //#region 맨 앞 값이 @null 일 때!
+            if (replace){
+                let available = getAvailableWord(progression, progressionLearnRate);
+
+                if (available === null){
+                    end = true;
+                    // 더 이상 암기할 단어 없음. 암기 완료.
+                }else{
+                    await redisClient.lsetAsync(cacheName, 0, JSON.stringify(available));
+                    front = available;
+                    console.log("@null");
+                    // 맨 앞을 랜덤값으로 변경!
+                }
+            }
+            //#endregion
+            
+            if (end){
                 res.json({
                     ok : 2
                 }); // 암기 끝!
+            }else{
+                res.json({
+                    ok : 1,
+                    problem : front,
+                    answers : [getRandomWord(progression), getRandomWord(progression)]
+                }); // 데이터 전달
             }
         }catch(error){  
+            console.log(error);
             res.json({
                 ok : 0,
                 error : String(error)
@@ -565,78 +607,31 @@ let serverBooting = async () => {
     app.post("/word/select", async (req, res) => {
         try{
             let progressionId = req.body.progressionId;
-            let index = req.body.index;
-            let correct = req.body.correct;
+            let index = req.body.index; // 단어 아이디
+            let correct = req.body.correct; // 정답 여부
+            
+            let cacheName = progressionId + "_cacheList";
 
-            let result = await redisClient.lpop(progressionId + "_cacheList");
+            let result = await redisClient.lindexAsync(cacheName, 0);
+            await redisClient.lpopAsync(cacheName); // 맨 앞 값을 꺼냄.
 
-            if (correct === true){ // 정답일경우 correct += 1 해야 함.
+            if (correct === true){
                 let update = { "$inc" : {} };
                 update["$inc"]["dictionaryArray."+index+".correct"] = 1;
 
                 await progressionModel.updateOne({_id : mongoose.Types.ObjectId(progressionId)}, update);
-            }
+            } // 정답일경우 correct ++
 
             let progression = await progressionModel.findOne({_id : mongoose.Types.ObjectId(progressionId)});
             let progressionLearnRate = progression.learnRate;
 
-            let word = progression.dictionaryArray[index];
-
-            let getAvailableWord = (varProgression) => {
-                let counter = 0;
-                let wordsLength = varProgression.dictionaryArray.length;
-
-                while (true){
-                    if (counter >= wordsLength){
-                        return null;
-                    }
-                    counter ++;
-
-                    let index = randomInt(0, wordsLength-1);
-                    let randWord = varProgression.dictionaryArray[index];
-
-                    if (randWord.correct >= varProgression.learnRate){
-                        // 3회 이상 맞았으면 추가하지 않음
-                        continue;
-                    }
-
-                    return {
-                        index : index,
-                        word : randWord
-                    };
-
+            let correct_val = progression.dictionaryArray[index].correct;
+            
+            if (correct_val < progressionLearnRate){ // 뒤에 더 추가해야함.
+                for (let i=0; i<randomInt(2); i++){
+                    await redisClient.lpushAsync(cacheName, "@null");
                 }
-            };
-
-            if (word.correct >= progressionLearnRate){
-                // 3회 이상 맞으면 더 이상 이 단어를 추가하지 않음.
-                // 랜덤 단어는 /word/get 에서 추가함.
-            }else{
-                while (true){
-                    if (await redisClient.llenAsync(progressionId + "_cacheList") < 5){
-                        await redisClient.rpushAsync(progressionId + "_cacheList", JSON.stringify({
-                            index : index,
-                            word : word
-                        }));
-                    }else{
-                        let index = Math.min(Math.random(0, 4), await redisClient.llenAsync(progressionId + "_cacheList")-1);
-
-                        let origin = await redisClient.lindexAsync(progressionId + "_readed", index);
-                        let pos = await redisClient.lposAsync(progressionId + "_readded", origin)
-                        
-                        if (pos === null){ // Not readded
-                            await redisClient.lsetAsync(progressionId  + "_cacheList", index, JSON.stringify({
-                                index : index,
-                                word : word
-                            })); // readded    
-                        }else{ // Readded !
-                            continue;
-                        }
-                    }
-                    
-                    break;
-                }
-                // 뒤에 같은 단어 추가
+                await redisClient.lpushAsync(cacheName, result);
             }
 
             res.json({
@@ -644,6 +639,7 @@ let serverBooting = async () => {
                 result : result
             });
         }catch(error){  
+            console.log(error);
             res.json({
                 ok : 0,
                 error : String(error)
@@ -688,20 +684,25 @@ let serverBooting = async () => {
     });
     //#endregion
     
+    //#region Listen
     const option = {
         ca: fs.readFileSync('/etc/letsencrypt/live/ltbox.net/fullchain.pem'),
         key: fs.readFileSync('/etc/letsencrypt/live/ltbox.net/privkey.pem', 'utf8').toString(),
         cert: fs.readFileSync('/etc/letsencrypt/live/ltbox.net/cert.pem', 'utf8').toString(),
-      };
-      
-    //Listen!
-      https.createServer(option, app).listen(443,() => {
-          console.log("443 port listen");
-      });
+    };
+    // Https Config
 
-      app.listen(80, () => {
+    //Listen!
+    // HTTPS
+    https.createServer(option, app).listen(443,() => {
+        console.log("443 port listen");
+    });
+
+    // HTTP
+    app.listen(80, () => {
         console.log("80 port listen");
       });
+    //#endregion
 };
 
 serverBooting();
