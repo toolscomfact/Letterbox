@@ -1,12 +1,13 @@
 <html>
     <head>
+        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
         
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <meta name="mobile-web-app-capable" content="yes">
         
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <link rel="apple-touch-icon" href="/img/favicon.ico">
+        <link rel="apple-touch-icon" href="favicon.ico">
         <title>
             Letterbox
         </title>
@@ -90,7 +91,7 @@
                 height:28%;
 
                 background-color: #e5e5e5;
-                box-shadow: 0px 0px 4px gray;
+                box-shadow: 0px 0px 4px #e5e5e5;
                 color:#14213d;
 
                 font-family: 'Noto Sans KR', sans-serif;
@@ -161,6 +162,8 @@
         answers = null;
         problem = null;
 
+        clicking = false;
+
         function postData(url, data){
             return new Promise(
                 function(resolve, reject) {
@@ -198,35 +201,38 @@
             var clickedAnswer = element.getAttribute("value");
             var answer = problem.word.meanings;
 
-            if (clickedAnswer === answer){
-                element.classList.add("correct");
+            if (!clicking){
+                clicking = true;
+                if (clickedAnswer === answer){
+                    element.classList.add("correct");
 
-                await postData("/word/select", {
-                    progressionId : getCookie("progressionId"),
-                    index : problem.index,
-                    correct : true
-                });
-            }else{
-                element.classList.add("incorrect");
+                    await postData("/word/select", {
+                        progressionId : getCookie("progressionId"),
+                        index : problem.index,
+                        correct : true
+                    });
+                }else{
+                    element.classList.add("incorrect");
 
-                var buttonElements = document.getElementsByClassName("button");
-                for (var i=0; i<buttonElements.length; i++){
-                    var buttonElement = buttonElements[i];
+                    var buttonElements = document.getElementsByClassName("button");
+                    for (var i=0; i<buttonElements.length; i++){
+                        var buttonElement = buttonElements[i];
 
-                    if (buttonElement.getAttribute("value") === answer){
-                        buttonElement.classList.add("correct");
-                        break;
+                        if (buttonElement.getAttribute("value") === answer){
+                            buttonElement.classList.add("correct");
+                            break;
+                        }
                     }
+
+                    await postData("/word/select", {
+                        progressionId : getCookie("progressionId"),
+                        index : problem.index,
+                        correct : false
+                    });
                 }
 
-                await postData("/word/select", {
-                    progressionId : getCookie("progressionId"),
-                    index : problem.index,
-                    correct : false
-                });
+                setTimeout(wordReload, 1000);
             }
-
-            setTimeout(wordReload, 1000);
         }
 
         function randomRange(min, max){
@@ -252,6 +258,7 @@
         removeAllAnswers();
 
         wordReload = async () => {
+            clicking = false;
             var wordResult = await postData("/word/get", {progressionId : getCookie("progressionId")});
             wordResult = JSON.parse(wordResult);
 
@@ -407,8 +414,6 @@
         if (getCookie("progressionId") === null){
             // progression 쿠키 값이 없으면 홈페이지로 이동
             location.href = "/";
-        }else{
-
         }
 
         onLoad();

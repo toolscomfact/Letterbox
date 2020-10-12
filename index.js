@@ -30,7 +30,7 @@ redisClient.delAsync = util.promisify(redisClient.del);
 //#region Pre initialized function
 function randomName() {
     return (Math.random()+1).toString(36).substring(2);
-}
+};
 
 function getAvailableWord(progression, progressionLearnRate) {
     let counter = 0;   
@@ -45,7 +45,7 @@ function getAvailableWord(progression, progressionLearnRate) {
 
         let index = 0;
         if (wordsLength >= 2){
-            index = randomInt(0, wordsLength-1);
+            index = randomInt(0, wordsLength);
         }
         let randWord = progression.dictionaryArray[index];
 
@@ -75,13 +75,32 @@ function getRandomWord(progression) {
         index : index,
         word : randWord
     };
-}
-
-
+};
 //#endregion
 
 //#region Mongoose Scheme-Model
 const Schema = mongoose.Schema;
+
+let userSchema = new Schema({
+    userType : {
+        type : String
+    }, // Google, Native
+
+    googleUserid : {
+        type : String,
+        default : null
+    },
+
+    nativeUserId : {
+        type : String,
+        default : null
+    },
+
+    nativeUserPw : {
+        type : String,
+        default : null
+    }
+});
 
 let dictionarySchema = new Schema({
     dictionaryArray : {
@@ -134,6 +153,7 @@ let userProgressionSchema = new Schema({
 
 let dictionaryModel = mongoose.model("Dictionary", dictionarySchema);
 let progressionModel = mongoose.model("Progression", userProgressionSchema);
+let userModel = mongoose.model("User", userSchema);
 //#endregion
 
 let app = express();
@@ -144,7 +164,7 @@ let absoultePath = require('path').dirname(require.main.filename)+"/docs";
 
 let serverBooting = async () => {
     // Mongodb Connect
-    await mongoose.connect("mongodb://13.125.19.118/febrezewords");
+    await mongoose.connect("mongodb://13.125.19.118/febrezewords", { useNewUrlParser: true, useUnifiedTopology: true });
 
     //#region Render sites
     app.get("", async (req, res) => {
@@ -170,6 +190,41 @@ let serverBooting = async () => {
     app.get("/login.html", async (req, res) => {
         res.sendFile(absoultePath + "/login.html");
     });
+
+    app.get("/favicon.ico", async (req, res) => {
+        res.sendFile(absoultePath + "/favicon.ico");
+    });
+    
+    app.get("/google.jpg", async (req, res) => {
+        res.sendFile(absoultePath + "/google.jpg");
+    });
+    //#endregion
+
+    //#region Sign
+    app.post("/user/login", async (req, res) => {
+        try{
+            let userType = req.body.userType;
+
+            if (userType === "Native"){
+                // Native
+
+                await userModel.exists({
+                    
+                })
+            }else if (userType === "Google"){
+                // Google
+            }else{
+                throw userType + " type not exists.";
+            }
+        }catch(error){
+            console.log(error);
+
+            res.json({
+                ok : 0,
+                err : String(error)
+            });
+        }
+    });  
     //#endregion
 
     //#region Dictionary
@@ -235,7 +290,7 @@ let serverBooting = async () => {
             let dictionaryName = req.body.dictionaryName;
             let dictionaryId = req.body.dictionaryId;
 
-            await dictionaryModel.update({
+            await dictionaryModel.updateOne({
                 _id : mongoose.Types.ObjectId(dictionaryId),
             }, {
                 $set : {
@@ -259,7 +314,7 @@ let serverBooting = async () => {
         try{
             let dictionaryId = req.body.dictionaryId;
 
-            let result = await dictionaryModel.remove({
+            let result = await dictionaryModel.deleteOne({
                 _id : mongoose.Types.ObjectId(dictionaryId)
             });
 
@@ -327,7 +382,7 @@ let serverBooting = async () => {
                     }
                 }
 
-                result = await dictionaryModel.update({
+                result = await dictionaryModel.updateOne({
                     _id : mongoose.Types.ObjectId(dictionaryId)
                 }, {
                     shareSuffix : randomStr
@@ -370,8 +425,6 @@ let serverBooting = async () => {
                     newDictionary.dictionaryOwner = googleUserid;
         
                     let result = await newDictionary.save();
-
-                    console.log(result);
 
                     res.cookie("modalCookie", "[\"'"+dictionary.dictionaryName+"' 단어장이 추가되었습니다. \"]")
                 }
@@ -434,7 +487,6 @@ let serverBooting = async () => {
             let ors = [];
 
             for (var i=0; i<dictIds.length; i++){
-                console.log(i);
                 ors.push({
                     "_id" : mongoose.Types.ObjectId(dictIds[i])
                 })
@@ -510,7 +562,13 @@ let serverBooting = async () => {
         try{
             let progressionId = req.body.progressionId;
 
-            let result =  await progressionModel.remove({_id : mongoose.Types.ObjectId(progressionId)});
+            let cacheName = progressionId + "_cacheList";
+
+            // remove in DB
+            let result =  await progressionModel.deleteOne({_id : mongoose.Types.ObjectId(progressionId)});
+
+            // remove in Cache
+            await redisClient.delAsync(cacheName);
 
             res.json({
                 ok : 1,
@@ -533,65 +591,90 @@ let serverBooting = async () => {
             let progressionLearnRate = progression.learnRate;
 
             let cacheName = progressionId + "_cacheList";
-            let cacheLen = await redisClient.llenAsync(cacheName);
 
             let replace = false;
             let empty = false;
 
-            let front ;
+            let front = "";
             let end = false;
 
-            if (cacheLen === 0){
-                empty = true;
-            }else{
-                front = await redisClient.lindexAsync(cacheName, 0);
-
-                if (front === "@null"){
-                    replace = true;
+            while (true){
+                let cacheLen = await redisClient.llenAsync(cacheName);  
+                
+                if (cacheLen === 0){
+                    empty = true;
                 }else{
-                    front = JSON.parse(front);
+                    if (front === ""){
+                        front = await redisClient.lindexAsync(cacheName, 0);
+                    }
+
+                    if (front === "@null"){
+                        replace = true;
+                    }else{
+                        let front_json = JSON.parse(front);
+    
+                        let front_index = front_json.index;
+                        if (progression.dictionaryArray[front_index].correct >= progressionLearnRate){
+                            replace = true; // 이미 3번 이상 한거라면 교체해야함!
+                        }else{
+                            break;
+                        }
+                    }
                 }
-            }
 
-            //#region 맨 앞이 비어있음!
-            if (empty){
-                let available = getAvailableWord(progression, progressionLearnRate);
+                //#region 맨 앞이 비어있음!
+                if (empty){
+                    let available = getAvailableWord(progression, progressionLearnRate);
 
-                if (available === null){
-                    end = true;
-                    // 더 이상 암기할 단어 없음. 암기 완료.
-                }else{
-                    await redisClient.lpushAsync(cacheName, JSON.stringify(available));
-                    front = available;
-                    // 맨 앞에 available 을 넣음!
+                    if (available === null){
+                        end = true;
+
+                        break;
+                        // 더 이상 암기할 단어 없음. 암기 완료.
+                    }else{
+                        await redisClient.lpushAsync(cacheName, JSON.stringify(available));
+                        front =  JSON.stringify(available);
+                        
+                        break;
+                        // 맨 앞에 available 을 넣음!
+                    }
                 }
-            }
-            //#endregion
+                //#endregion
 
-            //#region 맨 앞 값이 @null 일 때!
-            if (replace){
-                let available = getAvailableWord(progression, progressionLearnRate);
+                //#region 맨 앞 값이 @null 일 때!
+                if (replace){
+                    let available = getAvailableWord(progression, progressionLearnRate);
 
-                if (available === null){
-                    end = true;
-                    // 더 이상 암기할 단어 없음. 암기 완료.
-                }else{
-                    await redisClient.lsetAsync(cacheName, 0, JSON.stringify(available));
-                    front = available;
-                    console.log("@null");
-                    // 맨 앞을 랜덤값으로 변경!
+                    if (available === null){
+                        await redisClient.lpopAsync(cacheName);
+                        // @null 값 제거!
+
+                        if (await redisClient.llenAsync(cacheName) > 0){
+                            front = await redisClient.lindexAsync(cacheName, 0);
+                        }else{
+                            end = true;
+                            break;
+                        }
+                    }else{
+                        await redisClient.lsetAsync(cacheName, 0, JSON.stringify(available));
+                        front = JSON.stringify(available);
+
+                        break;
+                        // 맨 앞을 랜덤값으로 변경!
+                    }
                 }
+                //#endregion
             }
-            //#endregion
             
             if (end){
+                await redisClient.delAsync(cacheName);
                 res.json({
                     ok : 2
                 }); // 암기 끝!
             }else{
                 res.json({
                     ok : 1,
-                    problem : front,
+                    problem : JSON.parse(front),
                     answers : [getRandomWord(progression), getRandomWord(progression)]
                 }); // 데이터 전달
             }
@@ -615,23 +698,24 @@ let serverBooting = async () => {
             let result = await redisClient.lindexAsync(cacheName, 0);
             await redisClient.lpopAsync(cacheName); // 맨 앞 값을 꺼냄.
 
+            let progression = await progressionModel.findOne({_id : mongoose.Types.ObjectId(progressionId)});
+            let progressionLearnRate = progression.learnRate;
+
             if (correct === true){
                 let update = { "$inc" : {} };
                 update["$inc"]["dictionaryArray."+index+".correct"] = 1;
+                progression.dictionaryArray[index].correct ++;
 
                 await progressionModel.updateOne({_id : mongoose.Types.ObjectId(progressionId)}, update);
             } // 정답일경우 correct ++
-
-            let progression = await progressionModel.findOne({_id : mongoose.Types.ObjectId(progressionId)});
-            let progressionLearnRate = progression.learnRate;
 
             let correct_val = progression.dictionaryArray[index].correct;
             
             if (correct_val < progressionLearnRate){ // 뒤에 더 추가해야함.
                 for (let i=0; i<randomInt(2); i++){
-                    await redisClient.lpushAsync(cacheName, "@null");
+                    await redisClient.rpushAsync(cacheName, "@null");
                 }
-                await redisClient.lpushAsync(cacheName, result);
+                await redisClient.rpushAsync(cacheName, result);
             }
 
             res.json({
