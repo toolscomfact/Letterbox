@@ -117,6 +117,10 @@ let serverBooting = async () => {
     app.get("/dictionary.html", async (req, res) => {
         res.sendFile(absoultePath + "/dictionary.html");
     });
+    
+    app.get("/login.html", async (req, res) => {
+        res.sendFile(absoultePath + "/login.html");
+    });
     //#endregion
 
     //#region Dictionary
@@ -472,7 +476,7 @@ let serverBooting = async () => {
     });
     //#endregion
 
-    //#region  Word
+    //#region Word
     app.post("/word/get", async (req, res) => {
         try{
             let progressionId = req.body.progressionId;

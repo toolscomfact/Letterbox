@@ -13,7 +13,7 @@
 
         <style>
             html, body{
-                background-color: #48B4DC;
+                background-color: white;
                 margin: 0;
 
                 width:100%;
@@ -25,10 +25,10 @@
 
                 width:100%;
                 height:48px;
-                background-color: #33415C;
+                background-color: #14213d;
                 margin: 0;
 
-                box-shadow: 0px 1px 5px #33415C;
+                box-shadow: 0px 1px 5px #14213d;
 
                 font-family: 'Noto Sans KR', sans-serif;
                 font-weight: 400;
@@ -52,7 +52,7 @@
                 left : 40%;
                 top : 15;
 
-                background-color: white;
+                background-color: #14213d;
                 color:darkslategrey;
                 
                 border-radius: 6px;
@@ -67,16 +67,12 @@
             .top .spell{
                 position: relative;
 
-                width:80%;
-                height:80%;
 
-                color : white;
+                color : #14213d;
                 
                 font-family: 'Noto Sans KR', sans-serif;
                 font-weight: 800;
                 font-size: 5vh;
-
-                margin : 30 10% 30 10%;
             }
 
             .bottom{
@@ -84,7 +80,7 @@
 
                 width:100%;
                 height:40%;
-                bottom:0px;
+                bottom:100px;
             }
 
             .bottom .button{
@@ -93,16 +89,18 @@
                 width:96%;
                 height:28%;
 
-                background-color: #ffffff;
+                background-color: #e5e5e5;
                 box-shadow: 0px 0px 4px gray;
-                color:darkslategrey;
+                color:#14213d;
 
                 font-family: 'Noto Sans KR', sans-serif;
-                font-weight: 400;
+                font-weight: 600;
                 font-size: 2vh;
 
-                margin : 10 10 10 10;
-
+                margin-left:2%;
+                margin-top:10;
+                margin-bottom: 10;
+                
                 border-radius: 4px;
 
                 text-align: center;
@@ -126,15 +124,17 @@
     </head>
 
     <body>
+        <ins class="kakao_ad_area" style="display:none; position:absolute; bottom: 0px;" 
+        data-ad-unit    = "DAN-1jenro26phkj6" 
+        data-ad-width   = "320" 
+        data-ad-height  = "100"></ins> 
+        <script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script><body>
 
         <div class = "top">
             <div class = "spell" style="text-align: center;">
                 <span class = "hvcenter">
                     <a id="word-spell">{0}</a>
                     <br>
-                    <a style="font-size: 2.5vh; font-weight: 400;" id="word-pron">
-                        {1}
-                    </a>
                 </span>
             </div>
         </div>
@@ -147,7 +147,6 @@
             </div>
         </div>
 
-        
         <div class="header">
             <div class = "ledge">
                 Letterbox
@@ -387,13 +386,17 @@
             var bottomElement = document.getElementsByClassName("bottom")[0];
             var bodyElement = document.getElementsByTagName("body")[0];
 
-            var topHeight = bodyElement.offsetHeight - headerElement.offsetHeight - bottomElement.offsetHeight;
+            var topHeight = bodyElement.offsetHeight - headerElement.offsetHeight - bottomElement.offsetHeight - 100;
+            console.log("body - " + bodyElement.offsetHeight);
+            console.log("header - " + headerElement.offsetHeight);
+            console.log("bottom - " + bottomElement.offsetHeight);
+            
             topElement.style.height = topHeight; 
 
             /* spell 클래스를 가진 html 태그의 세로크기를 지정합니다 */
 
             var spellElement = document.getElementsByClassName("spell")[0];
-            spellElement.style.height = topHeight - 60;
+            spellElement.style.height = topHeight;
         }
 
         window.onresize = onResize;

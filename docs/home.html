@@ -3,8 +3,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <meta name="mobile-web-app-capable" content="yes">
-        <script data-ad-client="ca-pub-6528338966190448" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-        
+
         <title>
             Letterbox
         </title>
@@ -16,7 +15,7 @@
 
                 margin:0;
 
-                background-color: #48B4DC;
+                background-color: white;
             }
 
             .header{
@@ -28,14 +27,14 @@
                 width:100%;
                 height:48px;
 
-                background-color: #33415C;
+                background-color: #14213D;
                 color : white;
 
                 font-family: 'Noto Sans KR', sans-serif;
                 font-weight: 400;
                 font-size: 2vh;
 
-                box-shadow: 0px 0px 5px #33415C;
+                box-shadow: 0px 0px 5px #14213D;
             }
 
             .progress{
@@ -46,15 +45,15 @@
                 height:100px;
                 margin-bottom:30px;
 
-                color : darkslategray;
+                color : #14213D;
 
                 font-family: 'Noto Sans KR', sans-serif;
                 font-weight: 400;
                 font-size: 2vh;
 
-                background-color: white;
+                background-color: #E5E5E5;
                 border-radius: 5px;
-                box-shadow: 0px 0px 4px gray;
+                box-shadow: 0px 0px 4px #E5E5E5;
             }
 
             .progress .close{
@@ -108,6 +107,12 @@
         </style>
     </head>
 
+    <ins class="kakao_ad_area" style="display:none; position:absolute; bottom: 0px;" 
+    data-ad-unit    = "DAN-1jenro26phkj6" 
+    data-ad-width   = "320" 
+    data-ad-height  = "100"></ins> 
+    <script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
+        
     <body>
 
         <div>
@@ -117,7 +122,7 @@
                         {0}
                     </span>
                 </div>
-                <span class="close" onclick="destroyProgress(this);">
+                <span class="close" onclick="if(confirm('정말 삭제하시겠습니까?')) destroyProgress(this);">
                     X
                 </span>
                 
@@ -151,6 +156,10 @@
                 {0}
             </span>
         </div>
+
+        <div class="box"></div>
+
+        </div>
     </body>
 
     
@@ -178,8 +187,12 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         firebase.analytics();
+    </script>        
+
+    <!-- Message, Quest - Box -->
+    <script>
     </script>
-    
+
     <script>
         GlobalUsername = "";
         GlobalUserid = "";
